@@ -31,7 +31,8 @@ GAMES = {
         "bundle_id": "net.ninjacornix.reo.file1",
         "sha256": "06bd5fd7243144cd30cdd0c0023763a369738cb91b177b35e85f6a4782b4ca46",
         "binary_name": "reo_recomp",
-        "cover_url": "https://images.launchbox-app.com/2584a6d0-4316-40a3-8c04-56d267fd2d83.jpg",
+        "cover_url": "https://assets-prd.ignimgs.com/2022/01/19/re-outbreak-button-1642581313118.jpg?crop=1%3A1%2Csmart&format=jpg&auto=webp&quality=80",
+        "local_icon": "launcher/Assets/file1-icon.jpg",
     },
     "file2": {
         "elf": "SLUS_209.84",
@@ -40,7 +41,8 @@ GAMES = {
         "bundle_id": "net.ninjacornix.reo.file2",
         "sha256": "5c0411a26247ef9974cd94b844ac5aecbcbf4705db543f51814aeed89da0fd8d",
         "binary_name": "reo_recomp_file2",
-        "cover_url": "https://images.launchbox-app.com/r2_926a0694-7890-456a-a9f0-cf4b84571e2c.jpg",
+        "cover_url": "https://assets-prd.ignimgs.com/2022/01/19/resident-evil-outbreak-file-2-button-1642581006222.jpg?crop=1%3A1%2Csmart&format=jpg&auto=webp&quality=80",
+        "local_icon": "launcher/Assets/file2-icon.jpg",
     },
 }
 
@@ -280,19 +282,31 @@ def generate_icns_from_image(image_path: Path, output_icns: Path):
 
 
 def prepare_cover_icon(game_key: str, custom_cover: Path, output_icns: Path):
-    """Obtains cover art (custom, downloaded, or bundled fallback) and builds AppIcon.icns."""
+    """Obtains cover art (custom, bundled local icon, or online download) and builds AppIcon.icns."""
     if custom_cover and custom_cover.is_file():
         print(f"Using custom cover art: {custom_cover.name}")
         try:
             generate_icns_from_image(custom_cover, output_icns)
             return
         except Exception as e:
-            print(f"Warning: Failed to process custom cover ({e}), trying online cover art...")
+            print(f"Warning: Failed to process custom cover ({e}), falling back to default icon...")
 
-    # Try downloading official retail cover scan
+    # Check bundled local icon first (fast, reliable, offline-ready)
+    local_icon_rel = GAMES[game_key].get("local_icon")
+    if local_icon_rel:
+        local_icon_path = ROOT / local_icon_rel
+        if local_icon_path.is_file():
+            print(f"Using authentic cover artwork icon for {GAMES[game_key]['title']}...")
+            try:
+                generate_icns_from_image(local_icon_path, output_icns)
+                return
+            except Exception as e:
+                print(f"Notice: Local icon processing issue ({e}), checking online...")
+
+    # Fallback to online cover download
     cover_url = GAMES[game_key].get("cover_url")
     if cover_url:
-        print(f"Fetching official retail cover art for {GAMES[game_key]['title']}...")
+        print(f"Downloading cover art from {cover_url}...")
         try:
             with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp_file:
                 tmp_path = Path(tmp_file.name)
@@ -304,12 +318,11 @@ def prepare_cover_icon(game_key: str, custom_cover: Path, output_icns: Path):
                 out.write(resp.read())
             generate_icns_from_image(tmp_path, output_icns)
             tmp_path.unlink(missing_ok=True)
-            print("Successfully generated high-resolution cover art app icon!")
             return
         except Exception as e:
             print(f"Notice: Online cover download skipped ({e}). Using bundled icon.")
 
-    # Fallback: launcher/Assets/app-icon.png
+    # Ultimate fallback: launcher/Assets/app-icon.png
     fallback_png = ROOT / "launcher/Assets/app-icon.png"
     if fallback_png.is_file():
         generate_icns_from_image(fallback_png, output_icns)
