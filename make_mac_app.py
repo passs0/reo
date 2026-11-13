@@ -324,7 +324,7 @@ def create_app_bundle(
     molten_dylib: Path,
     output_dir: Path,
     custom_cover: Path = None,
-    resolution_scale: int = 2,
+    resolution_scale: int = 4,
     post_aa: str = "smaa",
     fullscreen: bool = True,
     embed_iso: bool = True,
@@ -395,7 +395,7 @@ elif [[ -L "$app_contents/Resources/game.iso" ]]; then
 fi
 
 # Graphics Quality & Anti-Aliasing (Fixes pixelation on Retina displays)
-: ${{REO_INTERNAL_RESOLUTION:="{resolution_scale}"}}    # 2 = 2x scale (supersampled), 4 = 4x scale (4K)
+: ${{REO_INTERNAL_RESOLUTION:="{resolution_scale}"}}    # 4 = 4x scale (4K Ultra supersampled), 2 = 2x HD, 1 = native 480p
 : ${{REO_DISPLAY_FILTER:="linear"}}                    # Smooth bilinear texture sampling (toggle with F2)
 : ${{REO_POST_AA:="{post_aa}"}}                         # Hardware edge smoothing: smaa or fxaa
 : ${{REO_FULLSCREEN:="{'1' if fullscreen else '0'}"}}  # 1 = Native macOS fullscreen (triggers Apple Game Mode)
@@ -498,8 +498,8 @@ def main():
         "--resolution",
         type=int,
         choices=[1, 2, 4],
-        default=2,
-        help="Internal rendering resolution scale: 1 (native 480p), 2 (2x smooth supersampling, default), 4 (4x 4K Ultra)",
+        default=4,
+        help="Internal rendering resolution scale: 1 (native 480p), 2 (2x HD), 4 (4x 4K Ultra, default)",
     )
     parser.add_argument(
         "--post-aa",

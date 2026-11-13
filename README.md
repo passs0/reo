@@ -14,7 +14,7 @@ Turn your legal PS2 **Resident Evil Outbreak** disc image into a standalone, nat
 - **One-Step Compiler:** Drag and drop your `.iso` into the script, and it outputs a double-clickable macOS `.app` bundle.
 - **Auto-Detection:** Automatically identifies and verifies whether your disc is **File #1** or **File #2**.
 - **Authentic Cover Art Icon:** Automatically fetches and formats the official high-resolution retail box cover into a crisp macOS `AppIcon.icns`.
-- **Anti-Pixelation & Supersampling:** Runs at **2× or 4× internal resolution** (up to 4K internal render) with hardware **SMAA** edge anti-aliasing and smooth bilinear filtering.
+- **Anti-Pixelation & 4K Supersampling:** Defaults to **4× internal resolution** (4K internal render) with hardware **SMAA** edge anti-aliasing and smooth bilinear filtering for crystal-clear visuals on Retina displays.
 - **macOS Game Mode:** Launches in native macOS Fullscreen Space to automatically activate Apple's high-priority Game Mode on macOS Sonoma / Sequoia.
 - **Self-Contained Bundle:** Generates a complete macOS app (`Resident Evil Outbreak.app` or `Resident Evil Outbreak - File #2.app`) with bundled shaders and MoltenVK.
 - **Native Saves:** Game saves and memory cards are managed cleanly in `~/Library/Application Support/OutbreakRecomp/`.
@@ -121,7 +121,7 @@ Resident Evil Outbreak uses the classic PS2 dual-stick survival horror scheme.
 ## 📺 Visuals & Anti-Pixelation
 
 The default settings are tuned specifically for Apple Silicon Retina screens:
-* **Internal Resolution:** Defaults to `2` (2× supersampling). You can change it to `4` (4K Ultra) or `1` (original 480p pixel look).
+* **Internal Resolution:** Defaults to **`4` (4× supersampling / 4K Ultra)**. You can change it to `2` (2× HD) or `1` (original 480p pixel look).
 * **Anti-Aliasing:** Hardware SMAA (`REO_POST_AA=smaa`) smooths rough polygon edges without blurring HUD elements.
 * **Display Filtering:** Smooth bilinear texture filtering is on by default. Press **`F2`** in-game at any time to toggle between smooth filtering and raw pixels.
 
