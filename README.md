@@ -1,6 +1,12 @@
 <h1 align="center">RE: Outbreak — macOS Native App Compiler</h1>
 
 <p align="center">
+  <img src="launcher/Assets/file1-icon.jpg" width="140" alt="Resident Evil Outbreak" style="border-radius: 24px;" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="launcher/Assets/file2-icon.jpg" width="140" alt="Resident Evil Outbreak File #2" style="border-radius: 24px;" />
+</p>
+
+<p align="center">
   <strong>Turn Resident Evil Outbreak PS2 ISOs into standalone native Apple Silicon macOS apps.</strong><br/>
   Pure static recompilation (ARM64 → Vulkan → MoltenVK → Metal) with automatic macOS Game Mode and zero emulator/Wine bloat.
 </p>
