@@ -1,6 +1,17 @@
-# RE: Outbreak — macOS Native App Compiler
+<h1 align="center">RE: Outbreak — macOS Native App Compiler</h1>
 
-Turn your legal PS2 **Resident Evil Outbreak** disc image into a standalone, native Apple Silicon macOS application bundle (`.app`) with a single command or drag-and-drop.
+<p align="center">
+  <strong>Turn Resident Evil Outbreak PS2 ISOs into standalone native Apple Silicon macOS apps.</strong><br/>
+  Pure static recompilation (ARM64 → Vulkan → MoltenVK → Metal) with automatic macOS Game Mode and zero emulator/Wine bloat.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/macOS-Apple%20Silicon%20(ARM64)-black?logo=apple" alt="macOS Apple Silicon" />
+  <img src="https://img.shields.io/badge/engine-C%2B%2B%20%7C%20Vulkan%20%7C%20MoltenVK%20%7C%20Metal-blue" alt="Engine" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0 License" /></a>
+</p>
+
+---
 
 * **No Windows launchers or .NET/Avalonia bloat**
 * **No emulators or Wine/Rosetta**
