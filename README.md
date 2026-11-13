@@ -26,7 +26,7 @@
 - **Auto-Detection:** Automatically identifies and verifies whether your disc is **File #1** or **File #2**.
 - **Authentic Cover Art Icon:** Automatically fetches and formats the official high-resolution retail box cover into a crisp macOS `AppIcon.icns`.
 - **Anti-Pixelation & 4K Supersampling:** Defaults to **4× internal resolution** (4K internal render) with hardware **SMAA** edge anti-aliasing and smooth bilinear filtering for crystal-clear visuals on Retina displays.
-- **macOS Game Mode:** Launches in native macOS Fullscreen Space to automatically activate Apple's high-priority Game Mode on macOS Sonoma / Sequoia.
+- **macOS Game Mode:** Launches in native macOS Fullscreen Space to automatically activate Apple's high-priority Game Mode on macOS 14+ (including macOS 27).
 - **Self-Contained Bundle:** Generates a complete macOS app (`Resident Evil Outbreak.app` or `Resident Evil Outbreak - File #2.app`) with bundled shaders and MoltenVK.
 - **Native Saves:** Game saves and memory cards are managed cleanly in `~/Library/Application Support/OutbreakRecomp/`.
 
@@ -75,15 +75,15 @@ You must provide your own legally dumped disc image (BYOG model). The compiler v
 git clone https://github.com/passs0/reo.git
 cd reo
 
-# Basic build (creates a self-contained, 2x-supersampled .app)
+# Basic build (creates a self-contained, 4K-supersampled .app)
 ./MakeOutbreakApp.command "/path/to/Resident Evil Outbreak.iso"
 ```
 
 #### Custom Options:
 
 ```zsh
-# 4K Ultra resolution on high-end Macs (M1/M2/M3/M4 Pro/Max):
-python3 make_mac_app.py "/path/to/game.iso" --resolution 4
+# Lower to 2x HD or 1x native 480p if needed on older hardware:
+python3 make_mac_app.py "/path/to/game.iso" --resolution 2
 
 # Use your own custom cover image for the app icon:
 python3 make_mac_app.py "/path/to/game.iso" --cover "/path/to/my_art.jpg"
@@ -140,7 +140,7 @@ The default settings are tuned specifically for Apple Silicon Retina screens:
 
 ## 🏆 Apple Game Mode
 
-macOS Sonoma (14) and macOS Sequoia (15) automatically turn on **Game Mode** when the game starts in native fullscreen:
+macOS 14 and newer (including macOS 27) automatically turn on **Game Mode** when the game starts in native fullscreen:
 * Gives Outbreak top GPU and CPU scheduling priority.
 * Drastically reduces latency for Bluetooth controllers (AirPods, DualSense, Xbox).
 * Look for the **Game Mode** badge in the macOS menu bar.
@@ -154,6 +154,27 @@ Memory cards are stored in your user directory:
 ~/Library/Application Support/OutbreakRecomp/memory-cards/default/data
 ```
 Deleting or updating your `.app` will never erase your saved games.
+
+---
+
+## 🔄 Updating
+
+When new updates are released to the compiler script or the underlying engine:
+
+1. **Pull the latest changes:**
+   ```zsh
+   cd /path/to/reo
+   git pull origin main
+   ```
+   *(If you also want to pull changes from the original upstream project `Ninjacornix/reo`, run `git fetch upstream && git merge upstream/main`.)*
+
+2. **Rebuild the `.app`:**
+   ```zsh
+   ./MakeOutbreakApp.command "/path/to/Resident Evil Outbreak.iso"
+   ```
+   * **Incremental & Fast:** The script reuses your cached `build-macos/` files. If only packaging scripts or settings changed, it finishes in **~10–30 seconds**. If C++ engine code changed, Ninja only recompiles the modified files.
+   * **Saves are Safe:** Your memory cards in `~/Library/Application Support/OutbreakRecomp/` are untouched.
+   * If you previously moved the `.app` to `/Applications`, simply replace it with the newly generated one (or pass `-o /Applications` when running `make_mac_app.py`).
 
 ---
 
