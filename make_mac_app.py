@@ -17,6 +17,7 @@ import struct
 import subprocess
 import sys
 import tempfile
+import urllib.request
 
 ROOT = Path(__file__).resolve().parent
 
@@ -30,6 +31,7 @@ GAMES = {
         "bundle_id": "net.ninjacornix.reo.file1",
         "sha256": "06bd5fd7243144cd30cdd0c0023763a369738cb91b177b35e85f6a4782b4ca46",
         "binary_name": "reo_recomp",
+        "cover_url": "https://images.launchbox-app.com/2584a6d0-4316-40a3-8c04-56d267fd2d83.jpg",
     },
     "file2": {
         "elf": "SLUS_209.84",
@@ -38,6 +40,7 @@ GAMES = {
         "bundle_id": "net.ninjacornix.reo.file2",
         "sha256": "5c0411a26247ef9974cd94b844ac5aecbcbf4705db543f51814aeed89da0fd8d",
         "binary_name": "reo_recomp_file2",
+        "cover_url": "https://images.launchbox-app.com/r2_926a0694-7890-456a-a9f0-cf4b84571e2c.jpg",
     },
 }
 
@@ -120,7 +123,6 @@ def inspect_iso(path: Path):
     if not path.is_file():
         return None, f"File does not exist: {path}"
 
-    file_size = path.stat().st_size
     with path.open("rb") as f:
         pvd = None
         for i in range(16, 80):
@@ -197,11 +199,47 @@ def inspect_iso(path: Path):
         return detected_game, None
 
 
-def generate_icns(png_path: Path, output_icns: Path):
-    if not png_path.is_file():
-        return False
+def generate_icns_from_image(image_path: Path, output_icns: Path):
+    """Builds a high-res macOS squircle icon (.icns) from a cover art image."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        iconset = Path(tmpdir) / "AppIcon.iconset"
+        tmp = Path(tmpdir)
+        converted_png = tmp / "base.png"
+        square_png = tmp / "square.png"
+
+        # Convert image to PNG
+        subprocess.run(
+            ["sips", "-s", "format", "png", str(image_path), "--out", str(converted_png)],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        # Scale preserving aspect ratio within 1024x1024 box, then pad with stylish dark border
+        subprocess.run(
+            ["sips", "-z", "1024", "724", str(converted_png), "--out", str(converted_png)],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        subprocess.run(
+            [
+                "sips",
+                "-p",
+                "1024",
+                "1024",
+                "--padColor",
+                "111417",
+                str(converted_png),
+                "--out",
+                str(square_png),
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        # Generate standard iconset sizes
+        iconset = tmp / "AppIcon.iconset"
         iconset.mkdir()
         for size in [16, 32, 64, 128, 256, 512]:
             subprocess.run(
@@ -210,7 +248,7 @@ def generate_icns(png_path: Path, output_icns: Path):
                     "-z",
                     str(size),
                     str(size),
-                    str(png_path),
+                    str(square_png),
                     "--out",
                     str(iconset / f"icon_{size}x{size}.png"),
                 ],
@@ -224,7 +262,7 @@ def generate_icns(png_path: Path, output_icns: Path):
                     "-z",
                     str(size * 2),
                     str(size * 2),
-                    str(png_path),
+                    str(square_png),
                     "--out",
                     str(iconset / f"icon_{size}x{size}@2x.png"),
                 ],
@@ -241,6 +279,42 @@ def generate_icns(png_path: Path, output_icns: Path):
     return True
 
 
+def prepare_cover_icon(game_key: str, custom_cover: Path, output_icns: Path):
+    """Obtains cover art (custom, downloaded, or bundled fallback) and builds AppIcon.icns."""
+    if custom_cover and custom_cover.is_file():
+        print(f"Using custom cover art: {custom_cover.name}")
+        try:
+            generate_icns_from_image(custom_cover, output_icns)
+            return
+        except Exception as e:
+            print(f"Warning: Failed to process custom cover ({e}), trying online cover art...")
+
+    # Try downloading official retail cover scan
+    cover_url = GAMES[game_key].get("cover_url")
+    if cover_url:
+        print(f"Fetching official retail cover art for {GAMES[game_key]['title']}...")
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp_file:
+                tmp_path = Path(tmp_file.name)
+            req = urllib.request.Request(
+                cover_url,
+                headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"},
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp, open(tmp_path, "wb") as out:
+                out.write(resp.read())
+            generate_icns_from_image(tmp_path, output_icns)
+            tmp_path.unlink(missing_ok=True)
+            print("Successfully generated high-resolution cover art app icon!")
+            return
+        except Exception as e:
+            print(f"Notice: Online cover download skipped ({e}). Using bundled icon.")
+
+    # Fallback: launcher/Assets/app-icon.png
+    fallback_png = ROOT / "launcher/Assets/app-icon.png"
+    if fallback_png.is_file():
+        generate_icns_from_image(fallback_png, output_icns)
+
+
 def create_app_bundle(
     game_key: str,
     executable: Path,
@@ -249,6 +323,10 @@ def create_app_bundle(
     iso_path: Path,
     molten_dylib: Path,
     output_dir: Path,
+    custom_cover: Path = None,
+    resolution_scale: int = 2,
+    post_aa: str = "smaa",
+    fullscreen: bool = True,
     embed_iso: bool = True,
 ):
     game = GAMES[game_key]
@@ -286,7 +364,6 @@ def create_app_bundle(
     if embed_iso:
         print(f"Embedding disc image into app bundle (standalone mode)...")
         try:
-            # Try hardlink first to save time and disk space if on same volume
             os.link(iso_path, dest_iso)
         except OSError:
             shutil.copy2(iso_path, dest_iso)
@@ -294,10 +371,8 @@ def create_app_bundle(
         print(f"Symlinking disc image to app bundle (--link-iso mode)...")
         dest_iso.symlink_to(iso_path.resolve())
 
-    # 4. App Icon
-    icon_source = ROOT / "launcher/Assets/app-icon.png"
-    if icon_source.is_file():
-        generate_icns(icon_source, resources / "AppIcon.icns")
+    # 4. App Icon (Original retail cover art)
+    prepare_cover_icon(game_key, custom_cover, resources / "AppIcon.icns")
 
     # 5. Launch Script (Outbreak)
     elf_name = game["elf"]
@@ -319,6 +394,13 @@ elif [[ -L "$app_contents/Resources/game.iso" ]]; then
     export REO_ISO="$(readlink "$app_contents/Resources/game.iso")"
 fi
 
+# Graphics Quality & Anti-Aliasing (Fixes pixelation on Retina displays)
+: ${{REO_INTERNAL_RESOLUTION:="{resolution_scale}"}}    # 2 = 2x scale (supersampled), 4 = 4x scale (4K)
+: ${{REO_DISPLAY_FILTER:="linear"}}                    # Smooth bilinear texture sampling (toggle with F2)
+: ${{REO_POST_AA:="{post_aa}"}}                         # Hardware edge smoothing: smaa or fxaa
+: ${{REO_FULLSCREEN:="{'1' if fullscreen else '0'}"}}  # 1 = Native macOS fullscreen (triggers Apple Game Mode)
+
+# Core engine settings
 : ${{REO_NATURAL:="1"}}
 : ${{REO_TURBO:="1"}}
 : ${{REO_GS_BACKEND:="parallel"}}
@@ -328,14 +410,13 @@ fi
 : ${{REO_GS_SPRITE_DEPTH_PARALLEL:="1"}}
 : ${{REO_VIF1_GPU_RESIDENT:="0"}}
 : ${{REO_VIF1_ASYNC:="1"}}
-: ${{REO_INTERNAL_RESOLUTION:="1"}}
 : ${{REO_DEBUG_PANEL:="0"}}
-: ${{REO_POST_AA:="none"}}
 : ${{REO_GPU_MOVIE:="0"}}
 
 export REO_NATURAL REO_TURBO REO_GS_BACKEND REO_GS_THREAD REO_GS_GPU_PRESENT
 export REO_GS_DISPATCH_PACE REO_GS_SPRITE_DEPTH_PARALLEL REO_VIF1_GPU_RESIDENT
-export REO_VIF1_ASYNC REO_INTERNAL_RESOLUTION REO_DEBUG_PANEL REO_POST_AA REO_GPU_MOVIE
+export REO_VIF1_ASYNC REO_INTERNAL_RESOLUTION REO_DISPLAY_FILTER REO_POST_AA
+export REO_FULLSCREEN REO_DEBUG_PANEL REO_GPU_MOVIE
 
 data_dir="$app_contents/Resources/data"
 elf_file="$data_dir/{elf_name}"
@@ -346,7 +427,7 @@ exec "$app_contents/MacOS/{game['binary_name']}" --game {game_key} --elf "$elf_f
     runner.write_text(launch_script)
     runner.chmod(0o755)
 
-    # 6. Info.plist & PkgInfo
+    # 6. Info.plist & PkgInfo (Configured for macOS Game Mode recognition)
     plist_data = {
         "CFBundleIdentifier": game["bundle_id"],
         "CFBundleName": game["title"],
@@ -373,14 +454,13 @@ exec "$app_contents/MacOS/{game['binary_name']}" --game {game_key} --elf "$elf_f
             stderr=subprocess.DEVNULL,
         )
     except Exception as e:
-        print(f"Notice: Ad-hoc signing had an issue: {e}")
+        print(f"Notice: Ad-hoc signing note: {e}")
 
     return app_path
 
 
 def clean_input_path(path_str: str) -> Path:
     s = path_str.strip().strip("'\"")
-    # Handle zsh/bash escaped spaces e.g. path\ with\ spaces
     s = s.replace("\\ ", " ")
     return Path(os.path.expanduser(s)).resolve()
 
@@ -408,6 +488,29 @@ def main():
         type=Path,
         default=ROOT,
         help="Directory to place the final .app bundle (default: current repository)",
+    )
+    parser.add_argument(
+        "--cover",
+        type=Path,
+        help="Path to a custom cover image file (.jpg or .png) to use as app icon",
+    )
+    parser.add_argument(
+        "--resolution",
+        type=int,
+        choices=[1, 2, 4],
+        default=2,
+        help="Internal rendering resolution scale: 1 (native 480p), 2 (2x smooth supersampling, default), 4 (4x 4K Ultra)",
+    )
+    parser.add_argument(
+        "--post-aa",
+        choices=["smaa", "fxaa", "none"],
+        default="smaa",
+        help="Post-processing anti-aliasing method: smaa (default, crisp edge smoothing), fxaa (soft), or none",
+    )
+    parser.add_argument(
+        "--windowed",
+        action="store_true",
+        help="Start in windowed mode instead of fullscreen (note: fullscreen triggers macOS Game Mode)",
     )
     parser.add_argument(
         "--link-iso",
@@ -444,9 +547,12 @@ def main():
         sys.exit(f"Error: {error}")
 
     game_info = GAMES[game_key]
-    print(f"Recognized Game: {game_info['title']} ({game_info['elf']})")
-    print(f"Architecture: Apple Silicon ARM64")
-    print(f"Parallel Jobs: {args.jobs}\n")
+    print(f"Recognized Game:     {game_info['title']} ({game_info['elf']})")
+    print(f"Target Architecture: Apple Silicon ARM64 (Metal + Vulkan)")
+    print(f"Internal Resolution: {args.resolution}x supersampling (anti-pixelation)")
+    print(f"Anti-Aliasing:       {args.post_aa.upper()}")
+    print(f"Display Mode:        {'Fullscreen (macOS Game Mode enabled)' if not args.windowed else 'Windowed'}")
+    print(f"Parallel Jobs:       {args.jobs}\n")
 
     # Run tools/macos/build.py
     build_dir = ROOT / "build-macos"
@@ -496,6 +602,10 @@ def main():
         iso_path=iso_path,
         molten_dylib=molten_dylib,
         output_dir=args.output_dir.resolve(),
+        custom_cover=args.cover,
+        resolution_scale=args.resolution,
+        post_aa=args.post_aa,
+        fullscreen=not args.windowed,
         embed_iso=not args.link_iso,
     )
 
@@ -503,11 +613,18 @@ def main():
     print(f"  BUILD SUCCEEDED! ")
     print("=======================================================")
     print(f"Application Bundle: {app_bundle.resolve()}")
-    print("\nYou can now:")
-    print(f"  1. Double click '{app_bundle.name}' to play.")
-    print("  2. Move it to your /Applications or Desktop folder.")
-    print("  3. Saves and memory cards are stored at:")
-    print("     ~/Library/Application Support/OutbreakRecomp/memory-cards/")
+    print("\n🎮 QUICK CONTROLS CHEAT SHEET:")
+    print("  • Move:       W / A / S / D")
+    print("  • RUN:        Hold 'Q' while moving (W + Q)")
+    print("  • Action:     Space (Cross)")
+    print("  • Aim Weapon: Hold '2' (R1)")
+    print("  • Shoot/Hit:  Hold '2', then press Space")
+    print("  • Tackle:     '4' (R2 special ability)")
+    print("  • Inventory:  'R' (Triangle)")
+    print("  • Back/Exit:  'E' (Circle)")
+    print("  • Toggle AA:  Press 'F2' in-game to toggle bilinear filter")
+    print("\nSaves & memory cards are stored at:")
+    print("  ~/Library/Application Support/OutbreakRecomp/memory-cards/")
     print("=======================================================\n")
 
 

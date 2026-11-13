@@ -2,9 +2,10 @@
 
 Turn your legal PS2 **Resident Evil Outbreak** disc image into a standalone, native Apple Silicon macOS application bundle (`.app`) with a single command or drag-and-drop.
 
-* **No Windows launchers**
+* **No Windows launchers or .NET/Avalonia bloat**
 * **No emulators or Wine/Rosetta**
 * **Pure static recompilation:** Native ARM64 code → Vulkan compute → MoltenVK → Metal
+* **macOS Game Mode enabled automatically**
 
 ---
 
@@ -12,9 +13,11 @@ Turn your legal PS2 **Resident Evil Outbreak** disc image into a standalone, nat
 
 - **One-Step Compiler:** Drag and drop your `.iso` into the script, and it outputs a double-clickable macOS `.app` bundle.
 - **Auto-Detection:** Automatically identifies and verifies whether your disc is **File #1** or **File #2**.
-- **Self-Contained Bundle:** Generates a complete macOS app (`Resident Evil Outbreak.app` or `Resident Evil Outbreak - File #2.app`) complete with native high-res application icons, bundled shaders, and MoltenVK libraries.
-- **Apple Silicon Native:** High performance on M1 / M2 / M3 / M4 Macs using hardware Metal scanout and multi-threaded parallel-GS.
-- **Native Saves:** Game saves and memory cards are managed in `~/Library/Application Support/OutbreakRecomp/`.
+- **Authentic Cover Art Icon:** Automatically fetches and formats the official high-resolution retail box cover into a crisp macOS `AppIcon.icns`.
+- **Anti-Pixelation & Supersampling:** Runs at **2× or 4× internal resolution** (up to 4K internal render) with hardware **SMAA** edge anti-aliasing and smooth bilinear filtering.
+- **macOS Game Mode:** Launches in native macOS Fullscreen Space to automatically activate Apple's high-priority Game Mode on macOS Sonoma / Sequoia.
+- **Self-Contained Bundle:** Generates a complete macOS app (`Resident Evil Outbreak.app` or `Resident Evil Outbreak - File #2.app`) with bundled shaders and MoltenVK.
+- **Native Saves:** Game saves and memory cards are managed cleanly in `~/Library/Application Support/OutbreakRecomp/`.
 
 ---
 
@@ -40,7 +43,7 @@ You must provide your own legally dumped disc image (BYOG model). The compiler v
   ```zsh
   brew install cmake ninja glslang spirv-tools molten-vk vulkan-headers
   ```
-  *(Or simply pass `--install-deps` to the compiler script to install them automatically).*
+  *(Or pass `--install-deps` to the compiler script to let it install them for you).*
 
 ---
 
@@ -51,68 +54,95 @@ You must provide your own legally dumped disc image (BYOG model). The compiler v
 1. Double-click **`MakeOutbreakApp.command`** in Finder.
 2. Drag and drop your Outbreak `.iso` file into the Terminal window.
 3. Press **Enter**.
-4. The script will verify your game, compile the engine, and output your standalone `.app` bundle.
+4. The script will verify your game, compile the engine, download authentic cover art, and output your standalone `.app` bundle.
 
 ---
 
 ### Method 2: Terminal Command
 
-Clone this repository and run:
-
 ```zsh
 git clone https://github.com/passs0/reo.git
 cd reo
 
-# Basic build (creates a self-contained .app)
+# Basic build (creates a self-contained, 2x-supersampled .app)
 ./MakeOutbreakApp.command "/path/to/Resident Evil Outbreak.iso"
 ```
 
-#### Useful CLI Options
-
-You can also run the Python script directly:
+#### Custom Options:
 
 ```zsh
-# Output the .app directly to your Desktop or Applications folder
-python3 make_mac_app.py "/path/to/game.iso" -o ~/Desktop
+# 4K Ultra resolution on high-end Macs (M1/M2/M3/M4 Pro/Max):
+python3 make_mac_app.py "/path/to/game.iso" --resolution 4
 
-# Symlink the ISO instead of embedding it (saves ~2-4 GB disk space)
+# Use your own custom cover image for the app icon:
+python3 make_mac_app.py "/path/to/game.iso" --cover "/path/to/my_art.jpg"
+
+# Output the .app directly to your Applications or Desktop folder:
+python3 make_mac_app.py "/path/to/game.iso" -o /Applications
+
+# Symlink the ISO instead of copying it (saves ~2-4 GB disk space):
 python3 make_mac_app.py "/path/to/game.iso" --link-iso
-
-# Specify parallel compiler threads (defaults to all CPU cores)
-python3 make_mac_app.py "/path/to/game.iso" -j 8
-
-# Automatically install missing dependencies via Homebrew
-python3 make_mac_app.py "/path/to/game.iso" --install-deps
 ```
 
 ---
 
-## 🎮 Controls & Settings
+## 🎮 Complete Controls Guide
 
-### Default Keyboard Controls
+Resident Evil Outbreak uses the classic PS2 dual-stick survival horror scheme.
 
-| PS2 Button | Mac Key |
-| :--- | :--- |
-| **D-Pad** | `W` / `A` / `S` / `D` |
-| **Left Stick** | `W` / `A` / `S` / `D` |
-| **Right Stick** | Arrow Keys |
-| **Cross (✕)** | `Space` |
-| **Circle (○)** | `E` |
-| **Square (□)** | `Q` |
-| **Triangle (△)** | `R` |
-| **Start / Select** | `Return` / `Delete` |
-| **L1 / R1** | `1` / `2` |
-| **L2 / R2** | `3` / `4` |
-| **L3 / R3** | `Z` / `X` |
+### How to Run 🏃‍♂️
+* **Keyboard:** Hold **`Q`** (Square) while moving with **`W`, `A`, `S`, `D`**.
+* **PlayStation Controller:** Hold **`Square (□)`** while pushing the Left Stick.
+* **Xbox Controller:** Hold **`X`** while pushing the Left Stick.
+* *Pro Tip:* Go to the in-game **Options → Control** menu and switch from **Type A** to **Type B**. In Type B, pushing the stick or movement key all the way forward runs automatically!
 
-*Controllers (DualSense, DualShock 4, Xbox) are automatically supported via macOS native GameController framework.*
+### Complete Keyboard Mapping
 
-### Saves & Memory Cards
+| Action | Mac Key | PS2 Equivalent |
+| :--- | :--- | :--- |
+| **Move / Walk** | `W` / `A` / `S` / `D` | Left Stick / D-Pad |
+| **RUN** | **Hold `Q`** while moving | **Square (□)** |
+| **Action / Confirm / Attack** | `Space` | **Cross (✕)** |
+| **Aim Weapon / Ready Stance** | **Hold `2`** | **R1** |
+| **Shoot / Swing Weapon** | Hold `2`, then press `Space` | R1 + Cross |
+| **Cancel / Back out of menus** | `E` | **Circle (○)** |
+| **Status Screen & Inventory** | `R` | **Triangle (△)** |
+| **Tackle / Special Ability** | `4` | **R2** (e.g. Kevin kick, Cindy duck) |
+| **Switch Target** | `1` / `3` | **L1** / **L2** |
+| **Voice Callouts ("Help!", "Go!")** | **Arrow Keys** | Right Stick |
+| **Pause Menu** | `Return` | **Start** |
+| **Map / Select** | `Delete` / `Backspace` | **Select** |
+| **Toggle Display Filter** | `F2` | Bilinear smoothing on/off |
 
-Memory cards are kept in your user directory so updating or moving the app won't touch your save data:
+*Connected gamepads (PS4, PS5, Xbox, Switch Pro) work automatically out-of-the-box via macOS GameController framework.*
+
+---
+
+## 📺 Visuals & Anti-Pixelation
+
+The default settings are tuned specifically for Apple Silicon Retina screens:
+* **Internal Resolution:** Defaults to `2` (2× supersampling). You can change it to `4` (4K Ultra) or `1` (original 480p pixel look).
+* **Anti-Aliasing:** Hardware SMAA (`REO_POST_AA=smaa`) smooths rough polygon edges without blurring HUD elements.
+* **Display Filtering:** Smooth bilinear texture filtering is on by default. Press **`F2`** in-game at any time to toggle between smooth filtering and raw pixels.
+
+---
+
+## 🏆 Apple Game Mode
+
+macOS Sonoma (14) and macOS Sequoia (15) automatically turn on **Game Mode** when the game starts in native fullscreen:
+* Gives Outbreak top GPU and CPU scheduling priority.
+* Drastically reduces latency for Bluetooth controllers (AirPods, DualSense, Xbox).
+* Look for the **Game Mode** badge in the macOS menu bar.
+
+---
+
+## 📁 Saves & Memory Cards
+
+Memory cards are stored in your user directory:
 ```
 ~/Library/Application Support/OutbreakRecomp/memory-cards/default/data
 ```
+Deleting or updating your `.app` will never erase your saved games.
 
 ---
 
