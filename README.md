@@ -1,112 +1,128 @@
-# RE: Outbreak
+# RE: Outbreak — macOS Native App Compiler
 
-[![Latest release](https://img.shields.io/github/v/release/Ninjacornix/reo?label=release&color=b33a3a)](https://github.com/Ninjacornix/reo/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/Ninjacornix/reo/total?label=downloads&color=2ea44f)](https://github.com/Ninjacornix/reo/releases)
-[![License](https://img.shields.io/badge/license-GPL--3.0-f2c94c)](LICENSE)
+Turn your legal PS2 **Resident Evil Outbreak** disc image into a standalone, native Apple Silicon macOS application bundle (`.app`) with a single command or drag-and-drop.
 
-A native Windows port of Resident Evil Outbreak (PS2). The game code is statically
-recompiled from your own disc and runs on a PS2 compatibility runtime, so there is no
-emulator involved. Both Outbreak File #1 and File #2 are supported, including online
-co-op.
+* **No Windows launchers**
+* **No emulators or Wine/Rosetta**
+* **Pure static recompilation:** Native ARM64 code → Vulkan compute → MoltenVK → Metal
 
-**[Download the latest release](https://github.com/Ninjacornix/reo/releases/latest)** ·
-[Requirements](REQUIREMENTS.md) · [Report a problem](https://github.com/Ninjacornix/reo/issues)
+---
 
-This is an unofficial fan project. You need your own copy of the game; no game files or
-game code are included in the download.
+## ✨ Features
 
-![The Play page with both games](docs/launcher-screenshots/launcher-play.png)
+- **One-Step Compiler:** Drag and drop your `.iso` into the script, and it outputs a double-clickable macOS `.app` bundle.
+- **Auto-Detection:** Automatically identifies and verifies whether your disc is **File #1** or **File #2**.
+- **Self-Contained Bundle:** Generates a complete macOS app (`Resident Evil Outbreak.app` or `Resident Evil Outbreak - File #2.app`) complete with native high-res application icons, bundled shaders, and MoltenVK libraries.
+- **Apple Silicon Native:** High performance on M1 / M2 / M3 / M4 Macs using hardware Metal scanout and multi-threaded parallel-GS.
+- **Native Saves:** Game saves and memory cards are managed in `~/Library/Application Support/OutbreakRecomp/`.
 
-## What you get
+---
 
-- **File #1**, playable start to finish: menus, scenarios, cutscenes, movies, audio and saves.
-- **File #2**, with its own import, build and saves.
-- **Online co-op** for up to four players. One player hosts from the launcher and the
-  others join by address or on the local network. No accounts or registration.
-- **Graphics options**: up to 4× internal resolution, 16:9, 21:9 and 32:9 display modes,
-  FXAA/SMAA, texture filtering, brightness and gamma.
-- **Audio**: separate master, music, effects, voice and interface volume, plus optional
-  spoken subtitles.
-- **Controllers**: DualSense, DualShock 4, Xbox controllers and keyboard, all remappable.
-- **Mods and cheats**: a seeded Randomizer for both games, asset replacement packs and
-  built-in cheats. See [making mods](docs/MODDING.md).
+## 💿 Supported Games
 
-## Getting started
+You must provide your own legally dumped disc image (BYOG model). The compiler verifies the executable's SHA-256 hash:
 
-1. Download `RE-Outbreak-<version>-Windows-x64.zip` from the
-   [latest release](https://github.com/Ninjacornix/reo/releases/latest), extract it to a
-   new folder and run `Outbreak.Launcher.exe`. Nothing else needs to be installed.
-2. Click **Choose ISO** and pick your disc image. Supported discs:
-   - File #1: NTSC-U v2.00 (SLUS-20765)
-   - File #2: NTSC-U v1.05 (SLUS-20984)
-3. Click **Build game**. The launcher imports the disc, downloads a compiler and builds
-   the game on your PC. This happens once, needs an internet connection and about 10 GB
-   of free space, and can take an hour or more.
-4. Click **Play**.
+* **Resident Evil Outbreak (File #1):** NTSC-U v2.00 (`SLUS-20765`)
+* **Resident Evil Outbreak File #2:** NTSC-U v1.05 (`SLUS-20984`)
 
-Later launches start straight away. Keep the ISO where it is, since the game reads from
-it. Your graphics driver needs OpenGL 3.3; Vulkan is used for GPU rendering when
-available. PAL and Japanese discs are not supported.
+*(PAL and Japanese versions are not supported by the underlying recompilation tables).*
 
-![Graphics settings](docs/launcher-screenshots/launcher-graphics.png)
+---
 
-## Co-op
+## 🛠 Prerequisites
 
-Open **Co-op** and choose **Host a game** or **Join a game**. The host shares an address
-with friends, who either paste it in or pick the game from the local network list. The
-first time you host, the launcher sets up a small server (it downloads Python if needed);
-after that it starts immediately.
+* **Hardware:** Any Apple Silicon Mac (M1/M2/M3/M4, macOS 12 Monterey or newer).
+* **Xcode Command Line Tools:**
+  ```zsh
+  xcode-select --install
+  ```
+* **Required Build Tools (via Homebrew):**
+  ```zsh
+  brew install cmake ninja glslang spirv-tools molten-vk vulkan-headers
+  ```
+  *(Or simply pass `--install-deps` to the compiler script to install them automatically).*
 
-![Co-op page](docs/launcher-screenshots/launcher-coop.png)
+---
 
-Over the internet the host has to be reachable. A VPN like Tailscale or ZeroTier is the
-easiest option. Otherwise forward these ports to the host; the launcher can try to do this
-for you with UPnP.
+## 🚀 Quick Start
 
-| Port | Used for |
-| --- | --- |
-| UDP 9090 | Login |
-| TCP 10127 | Game app server |
-| UDP 9091 | Game server (changeable) |
-| TCP 10128 | Player sign-up (changeable) |
-| UDP 10129 | Finding the host and sharing session settings (changeable) |
+### Method 1: Drag & Drop (Easiest)
 
-Players who join can see the host's IP address. Connections behind carrier-grade NAT
-usually need a VPN. More detail is in the [server setup](network/server/SETUP.md) and
-[networking notes](docs/NETWORKING.md).
+1. Double-click **`MakeOutbreakApp.command`** in Finder.
+2. Drag and drop your Outbreak `.iso` file into the Terminal window.
+3. Press **Enter**.
+4. The script will verify your game, compile the engine, and output your standalone `.app` bundle.
 
-## Where your data lives
+---
 
-Settings, imported discs, builds, memory cards, mods and logs are kept in a `data`
-folder next to the launcher, so the whole thing can be moved or backed up as one
-folder. To keep them somewhere else, use **Game files → Storage → Change folder**.
-Updates keep your data.
+### Method 2: Terminal Command
 
-## Status
+Clone this repository and run:
 
-File #1 and File #2 are both supported on Windows. Some rooms are CPU-heavy, and
-performance there depends on your processor. A macOS build exists in the
-source tree ([notes](docs/MACOS.md)) but there is no Mac download yet. Linux support is in
-progress.
+```zsh
+git clone https://github.com/passs0/reo.git
+cd reo
 
-## Building from source
+# Basic build (creates a self-contained .app)
+./MakeOutbreakApp.command "/path/to/Resident Evil Outbreak.iso"
+```
 
-See [building on Windows](docs/BUILDING.md), [developer tools](tools/README.md) and
-[contributing](CONTRIBUTING.md). The repository is laid out as follows:
+#### Useful CLI Options
 
-| Directory | Contents |
-| --- | --- |
-| `launcher/` | The launcher (Avalonia/.NET) and input adapter |
-| `recomp/` | Recompilation configuration and game-specific overrides |
-| `runtime/` | PS2 compatibility runtime pieces |
-| `tools/` | Build, extraction, graphics backend and test tools |
-| `network/` | Co-op networking and the bundled openSNAP server |
-| `third_party/` | The pinned PS2Recomp submodule and its patches |
+You can also run the Python script directly:
 
-## License
+```zsh
+# Output the .app directly to your Desktop or Applications folder
+python3 make_mac_app.py "/path/to/game.iso" -o ~/Desktop
 
-This fork's own code is GPL-3.0-only. Upstream and third-party components keep their
-licenses; see [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md).
+# Symlink the ISO instead of embedding it (saves ~2-4 GB disk space)
+python3 make_mac_app.py "/path/to/game.iso" --link-iso
 
-Resident Evil and Outbreak are trademarks of their respective owners. This project is not
-affiliated with or endorsed by Capcom or Sony.
+# Specify parallel compiler threads (defaults to all CPU cores)
+python3 make_mac_app.py "/path/to/game.iso" -j 8
+
+# Automatically install missing dependencies via Homebrew
+python3 make_mac_app.py "/path/to/game.iso" --install-deps
+```
+
+---
+
+## 🎮 Controls & Settings
+
+### Default Keyboard Controls
+
+| PS2 Button | Mac Key |
+| :--- | :--- |
+| **D-Pad** | `W` / `A` / `S` / `D` |
+| **Left Stick** | `W` / `A` / `S` / `D` |
+| **Right Stick** | Arrow Keys |
+| **Cross (✕)** | `Space` |
+| **Circle (○)** | `E` |
+| **Square (□)** | `Q` |
+| **Triangle (△)** | `R` |
+| **Start / Select** | `Return` / `Delete` |
+| **L1 / R1** | `1` / `2` |
+| **L2 / R2** | `3` / `4` |
+| **L3 / R3** | `Z` / `X` |
+
+*Controllers (DualSense, DualShock 4, Xbox) are automatically supported via macOS native GameController framework.*
+
+### Saves & Memory Cards
+
+Memory cards are kept in your user directory so updating or moving the app won't touch your save data:
+```
+~/Library/Application Support/OutbreakRecomp/memory-cards/default/data
+```
+
+---
+
+## ⚖️ Legal & Disclaimer
+
+This is an unofficial, open-source fan project. **No copyrighted game files, ISOs, or proprietary assets are included in this repository.** Users must provide their own legally acquired disc image to compile the game.
+
+## 🤝 Credits & Upstream
+
+* Upstream project: [Ninjacornix/reo](https://github.com/Ninjacornix/reo)
+* Static Recompilation: [PS2Recomp](https://github.com/sp00nznet/PS2Recomp)
+* GPU Emulation: [paraLLEl-GS](https://github.com/Arntzen-Software/parallel-gs) & [Granite](https://github.com/Themaister/Granite)
+* Metal Translation: [MoltenVK](https://github.com/KhronosGroup/MoltenVK)
