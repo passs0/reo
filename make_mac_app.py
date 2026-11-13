@@ -469,6 +469,12 @@ exec "$app_contents/MacOS/{game['binary_name']}" --game {game_key} --elf "$elf_f
     except Exception as e:
         print(f"Notice: Ad-hoc signing note: {e}")
 
+    # 8. Refresh macOS Finder / LaunchServices icon cache
+    subprocess.run(["touch", str(app_path)], check=False)
+    lsregister = "/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+    if Path(lsregister).exists():
+        subprocess.run([lsregister, "-f", str(app_path)], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
     return app_path
 
 
