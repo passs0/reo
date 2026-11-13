@@ -1,9 +1,9 @@
 <h1 align="center">RE: Outbreak — macOS Native App Compiler</h1>
 
 <p align="center">
-  <img src="launcher/Assets/file1-icon.jpg" width="140" alt="Resident Evil Outbreak" style="border-radius: 24px;" />
+  <img src="media/icons/file1-icon.jpg" width="140" alt="Resident Evil Outbreak" style="border-radius: 24px;" />
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="launcher/Assets/file2-icon.jpg" width="140" alt="Resident Evil Outbreak File #2" style="border-radius: 24px;" />
+  <img src="media/icons/file2-icon.jpg" width="140" alt="Resident Evil Outbreak File #2" style="border-radius: 24px;" />
 </p>
 
 <p align="center">
@@ -105,12 +105,25 @@ python3 make_mac_app.py "/path/to/game.iso" --link-iso
 
 ## 🎮 Complete Controls Guide
 
-Resident Evil Outbreak uses the classic PS2 dual-stick survival horror scheme.
+### Modern Controller Layout (Default for Gamepads)
+Connected controllers (PS4, PS5, Xbox, Switch Pro) automatically use a **Modern Controls** preset (`REO_MODERN_CONTROLS=1`, similar to Resident Evil 2/4 Remake) so you don't have to use the clunky original PS2 triggers:
+
+| Action | PlayStation Controller | Xbox Controller |
+| :--- | :--- | :--- |
+| **Aim Weapon** | **Hold `L2`** | **Hold `LT`** |
+| **Shoot / Attack** | **Hold `L2` + Press `R2`** | **Hold `LT` + Press `RT`** |
+| **Interact / Confirm / Open Doors** | **`Cross (✕)`** | **`A`** |
+| **Cancel / Back / Quit Menu** | **`Circle (○)`** | **`B`** |
+| **Inventory / Status** | **`Triangle (△)`** | **`Y`** |
+| **Run / Sprint** | **Hold `Square (□)`** or **Click `L3`** | **Hold `X`** or **Click `LS`** |
+| **Tackle / Special Ability** | **`R2`** *(when not aiming)* | **`RT`** *(when not aiming)* |
+| **Switch Target** | **`L1` / `R1`** | **`LB` / `RB`** |
+
+*(Prefer the original PS2 trigger layout? Pass `--classic-controls` when building or set `REO_MODERN_CONTROLS=0`.)*
 
 ### How to Run 🏃‍♂️
 * **Keyboard:** Hold **`Q`** (Square) while moving with **`W`, `A`, `S`, `D`**.
-* **PlayStation Controller:** Hold **`Square (□)`** while pushing the Left Stick.
-* **Xbox Controller:** Hold **`X`** while pushing the Left Stick.
+* **Controller:** Hold **`Square (□)` / `X`**, or click **`L3` (Left Stick)** while moving.
 * *Pro Tip:* Go to the in-game **Options → Control** menu and switch from **Type A** to **Type B**. In Type B, pushing the stick or movement key all the way forward runs automatically!
 
 ### Complete Keyboard Mapping

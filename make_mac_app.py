@@ -32,7 +32,7 @@ GAMES = {
         "sha256": "06bd5fd7243144cd30cdd0c0023763a369738cb91b177b35e85f6a4782b4ca46",
         "binary_name": "reo_recomp",
         "cover_url": "https://assets-prd.ignimgs.com/2022/01/19/re-outbreak-button-1642581313118.jpg?crop=1%3A1%2Csmart&format=jpg&auto=webp&quality=80",
-        "local_icon": "launcher/Assets/file1-icon.jpg",
+        "local_icon": "media/icons/file1-icon.jpg",
     },
     "file2": {
         "elf": "SLUS_209.84",
@@ -42,7 +42,7 @@ GAMES = {
         "sha256": "5c0411a26247ef9974cd94b844ac5aecbcbf4705db543f51814aeed89da0fd8d",
         "binary_name": "reo_recomp_file2",
         "cover_url": "https://assets-prd.ignimgs.com/2022/01/19/resident-evil-outbreak-file-2-button-1642581006222.jpg?crop=1%3A1%2Csmart&format=jpg&auto=webp&quality=80",
-        "local_icon": "launcher/Assets/file2-icon.jpg",
+        "local_icon": "media/icons/file2-icon.jpg",
     },
 }
 
@@ -322,8 +322,8 @@ def prepare_cover_icon(game_key: str, custom_cover: Path, output_icns: Path):
         except Exception as e:
             print(f"Notice: Online cover download skipped ({e}). Using bundled icon.")
 
-    # Ultimate fallback: launcher/Assets/app-icon.png
-    fallback_png = ROOT / "launcher/Assets/app-icon.png"
+    # Ultimate fallback: media/icons/app-icon.png
+    fallback_png = ROOT / "media/icons/app-icon.png"
     if fallback_png.is_file():
         generate_icns_from_image(fallback_png, output_icns)
 
@@ -340,6 +340,7 @@ def create_app_bundle(
     resolution_scale: int = 4,
     post_aa: str = "smaa",
     fullscreen: bool = True,
+    modern_controls: bool = True,
     embed_iso: bool = True,
 ):
     game = GAMES[game_key]
@@ -412,6 +413,7 @@ fi
 : ${{REO_DISPLAY_FILTER:="linear"}}                    # Smooth bilinear texture sampling (toggle with F2)
 : ${{REO_POST_AA:="{post_aa}"}}                         # Hardware edge smoothing: smaa or fxaa
 : ${{REO_FULLSCREEN:="{'1' if fullscreen else '0'}"}}  # 1 = Native macOS fullscreen (triggers Apple Game Mode)
+: ${{REO_MODERN_CONTROLS:="{'1' if modern_controls else '0'}"}}  # 1 = L2 Aim, L2+R2 Shoot, L3/Square Run
 
 # Core engine settings
 : ${{REO_NATURAL:="1"}}
@@ -429,7 +431,7 @@ fi
 export REO_NATURAL REO_TURBO REO_GS_BACKEND REO_GS_THREAD REO_GS_GPU_PRESENT
 export REO_GS_DISPATCH_PACE REO_GS_SPRITE_DEPTH_PARALLEL REO_VIF1_GPU_RESIDENT
 export REO_VIF1_ASYNC REO_INTERNAL_RESOLUTION REO_DISPLAY_FILTER REO_POST_AA
-export REO_FULLSCREEN REO_DEBUG_PANEL REO_GPU_MOVIE
+export REO_FULLSCREEN REO_MODERN_CONTROLS REO_DEBUG_PANEL REO_GPU_MOVIE
 
 data_dir="$app_contents/Resources/data"
 elf_file="$data_dir/{elf_name}"
@@ -532,6 +534,11 @@ def main():
         help="Start in windowed mode instead of fullscreen (note: fullscreen triggers macOS Game Mode)",
     )
     parser.add_argument(
+        "--classic-controls",
+        action="store_true",
+        help="Use classic PS2 controller layout (R1+Cross to shoot) instead of Modern Controls (L2+R2 to shoot)",
+    )
+    parser.add_argument(
         "--link-iso",
         action="store_true",
         help="Symlink the ISO instead of embedding it into the app bundle (saves ~2-4 GB)",
@@ -625,6 +632,7 @@ def main():
         resolution_scale=args.resolution,
         post_aa=args.post_aa,
         fullscreen=not args.windowed,
+        modern_controls=not args.classic_controls,
         embed_iso=not args.link_iso,
     )
 

@@ -1,2 +1,0 @@
-PySide6-Essentials==6.10.3
-PyInstaller==6.16.0

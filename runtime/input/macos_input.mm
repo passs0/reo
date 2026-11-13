@@ -31,7 +31,7 @@ struct Configuration {
     std::array<int, 16> key{51,6,7,36,13,2,1,0,20,21,18,19,15,14,49,12};
     std::array<int, 16> mapping{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
     std::array<int,4> camera{126,125,123,124};
-    bool swapSticks = false, invertRightY = false;
+    bool swapSticks = false, invertRightY = false, modernControls = false;
     float deadzone = .15f;
     int device = -1; // -1 auto, -2 keyboard, otherwise controller index.
     bool rumble = true;
@@ -62,6 +62,7 @@ struct Configuration {
             else if (std::strcmp(value, "auto") != 0) device = std::clamp(std::atoi(value), 0, 3);
         }
         if (const char* value = std::getenv("REO_MACOS_RUMBLE")) rumble = *value != '0';
+        if (const char* value = std::getenv("REO_MODERN_CONTROLS")) modernControls = *value == '1';
     }
 };
 const Configuration& config() { static const Configuration value; return value; }
@@ -167,18 +168,36 @@ void capture() {
             button(pad, PS2_DOWN, gamepad.dpad.down.pressed, 3, gamepad.dpad.down.value);
             button(pad, PS2_LEFT, gamepad.dpad.left.pressed, 1, gamepad.dpad.left.value);
             button(pad, PS2_RIGHT, gamepad.dpad.right.pressed, 0, gamepad.dpad.right.value);
-            button(pad, PS2_CROSS, gamepad.buttonA.pressed, 6, gamepad.buttonA.value);
-            button(pad, PS2_CIRCLE, gamepad.buttonB.pressed, 5, gamepad.buttonB.value);
-            button(pad, PS2_SQUARE, gamepad.buttonX.pressed, 7, gamepad.buttonX.value);
-            button(pad, PS2_TRIANGLE, gamepad.buttonY.pressed, 4, gamepad.buttonY.value);
-            button(pad, PS2_L1, gamepad.leftShoulder.pressed, 8, gamepad.leftShoulder.value);
-            button(pad, PS2_R1, gamepad.rightShoulder.pressed, 9, gamepad.rightShoulder.value);
-            button(pad, PS2_L2, gamepad.leftTrigger.value > 0.12f, 10, gamepad.leftTrigger.value);
-            button(pad, PS2_R2, gamepad.rightTrigger.value > 0.12f, 11, gamepad.rightTrigger.value);
+            if (config().modernControls) {
+                const bool aiming = gamepad.leftTrigger.value > 0.12f;
+                const bool shooting = aiming && (gamepad.rightTrigger.value > 0.12f);
+                const bool tackle = !aiming && (gamepad.rightTrigger.value > 0.12f);
+                button(pad, PS2_CROSS, gamepad.buttonA.pressed || shooting, 6,
+                       shooting ? gamepad.rightTrigger.value : gamepad.buttonA.value);
+                button(pad, PS2_CIRCLE, gamepad.buttonB.pressed, 5, gamepad.buttonB.value);
+                button(pad, PS2_SQUARE, gamepad.buttonX.pressed || gamepad.leftThumbstickButton.pressed, 7,
+                       gamepad.leftThumbstickButton.pressed ? 1.0f : gamepad.buttonX.value);
+                button(pad, PS2_TRIANGLE, gamepad.buttonY.pressed, 4, gamepad.buttonY.value);
+                button(pad, PS2_L1, gamepad.leftShoulder.pressed, 8, gamepad.leftShoulder.value);
+                button(pad, PS2_R1, aiming, 9, gamepad.leftTrigger.value);
+                button(pad, PS2_L2, gamepad.rightShoulder.pressed, 10, gamepad.rightShoulder.value);
+                button(pad, PS2_R2, tackle, 11, tackle ? gamepad.rightTrigger.value : 0.0f);
+                button(pad, PS2_L3, false);
+                button(pad, PS2_R3, gamepad.rightThumbstickButton.pressed);
+            } else {
+                button(pad, PS2_CROSS, gamepad.buttonA.pressed, 6, gamepad.buttonA.value);
+                button(pad, PS2_CIRCLE, gamepad.buttonB.pressed, 5, gamepad.buttonB.value);
+                button(pad, PS2_SQUARE, gamepad.buttonX.pressed, 7, gamepad.buttonX.value);
+                button(pad, PS2_TRIANGLE, gamepad.buttonY.pressed, 4, gamepad.buttonY.value);
+                button(pad, PS2_L1, gamepad.leftShoulder.pressed, 8, gamepad.leftShoulder.value);
+                button(pad, PS2_R1, gamepad.rightShoulder.pressed, 9, gamepad.rightShoulder.value);
+                button(pad, PS2_L2, gamepad.leftTrigger.value > 0.12f, 10, gamepad.leftTrigger.value);
+                button(pad, PS2_R2, gamepad.rightTrigger.value > 0.12f, 11, gamepad.rightTrigger.value);
+                button(pad, PS2_L3, gamepad.leftThumbstickButton.pressed);
+                button(pad, PS2_R3, gamepad.rightThumbstickButton.pressed);
+            }
             button(pad, PS2_START, gamepad.buttonMenu.pressed);
             button(pad, PS2_SELECT, gamepad.buttonOptions.pressed);
-            button(pad, PS2_L3, gamepad.leftThumbstickButton.pressed);
-            button(pad, PS2_R3, gamepad.rightThumbstickButton.pressed);
             pad.left_x = axis(gamepad.leftThumbstick.xAxis.value);
             pad.left_y = axis(-gamepad.leftThumbstick.yAxis.value);
             pad.right_x = axis(gamepad.rightThumbstick.xAxis.value);
