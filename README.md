@@ -66,12 +66,15 @@ You must provide your own legally dumped disc image (BYOG model). The compiler v
 
 ## 🚀 Quick Start
 
-### Method 1: Drag & Drop (Easiest)
+### Method 1: Run from Terminal
 
-1. Double-click **`MakeOutbreakApp.command`** in Finder.
-2. Drag and drop your Outbreak `.iso` file into the Terminal window.
-3. Press **Enter**.
-4. The script will verify your game, compile the engine, download authentic cover art, and output your standalone `.app` bundle.
+1. Open **Terminal** from Applications → Utilities.
+2. Drag **`MakeOutbreakApp.command`** from Finder into the Terminal window.
+3. Type a space, then drag your supported Outbreak `.iso` file into the window.
+4. Press **Return** and keep Terminal open while the app is built.
+
+This runs the command with the ISO path as its argument. Do not double-click the
+`.command` file in Finder.
 
 ---
 
