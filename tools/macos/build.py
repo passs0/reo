@@ -187,19 +187,46 @@ def main():
 
 
 def sync_project(project, ps2):
-    """Copy this checkout's sources and the patched PS2Recomp tree into a private File #2 project.
+    """Copy this source tree and the patched PS2Recomp tree into a private File #2 project.
 
     File #1's generated files (runtime catalogues, IRQ originals, queue-control body) live in
-    the shared trees; File #2 regenerates its own here, as the Windows build kit worker does.
+    the shared trees; File #2 regenerates its own in this isolated workspace.
     """
     project.mkdir(parents=True, exist_ok=True)
-    tracked = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).split(b"\0")
-    tracked = b"\0".join(path for path in tracked if path and path != b"third_party/PS2Recomp")
-    run("rsync", "-a", "--from0", "--files-from=-", str(ROOT) + "/", project, input=tracked)
+    inventory = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT,
+                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    if inventory.returncode == 0:
+        tracked = b"\0".join(path for path in inventory.stdout.split(b"\0")
+                              if path and path != b"third_party/PS2Recomp")
+        run("rsync", "-a", "--from0", "--files-from=-", str(ROOT) + "/", project,
+            input=tracked)
+    else:
+        # GitHub source archives have no .git directory. Copy their source tree
+        # directly, excluding local builds, generated game data, and binaries.
+        excludes = (
+            ".git/", ".DS_Store", "build/", "build-*/", "cmake-build-*/", "out/",
+            "dist/", "deps/", "third_party/build/", "third_party/PS2Recomp/",
+            "recomp_output/", "recomp/config/output*/", "tools/ps2_debug/overlay_dumps/",
+            "iso/", "extracted/", "game_data*/", "resident-evil-outbreak-file-2/",
+            "network-server/", "saves/", "data/", "gs_frames/", "*.app/",
+            "*.iso", "*.ISO", "*.bin", "*.BIN", "*.elf", "*.ELF", "*.cue",
+            "*.CUE", "*.zip", "*.7z", "*.dmp", "*.mcd", "*.sqlite", "*.sqlite3",
+            "*.o", "*.obj", "*.exe", "*.dll", "*.so", "*.dylib", "*.lib", "*.a",
+            "*.pdb", "*.ilk", "*.exp", "*.spv", "*.cache", "*.recomp.cpp",
+            "*.tmp", "*.log", ".env", ".env.*", ".claude/", ".codex/", ".opencode/",
+            "__pycache__/", ".venv/", "venv/", "bin/", "obj/", "artifacts/",
+        )
+        args = ["rsync", "-a", "--include", ".env.example"]
+        for pattern in excludes:
+            args.extend(("--exclude", pattern))
+        run(*args, str(ROOT) + "/", project)
     runtime = subprocess.check_output(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], cwd=ps2)
     generated = (b"ps2xRuntime/src/lib/irq_cpu_original/", b"ps2xRuntime/src/lib/local_source_catalogues/")
     runtime = b"\0".join(path for path in runtime.split(b"\0") if path and not path.startswith(generated))
-    run("rsync", "-a", "--from0", "--files-from=-", str(ps2) + "/", project / "third_party/PS2Recomp", input=runtime)
+    runtime_destination = project / "third_party/PS2Recomp"
+    runtime_destination.mkdir(parents=True, exist_ok=True)
+    run("rsync", "-a", "--from0", "--files-from=-", str(ps2) + "/",
+        str(runtime_destination) + "/", input=runtime)
 
 
 def build_file2(args, build, ps2, gs, elfio, toml11, metal_driver):
