@@ -278,6 +278,7 @@ def build_file2(args, build, ps2, gs, elfio, toml11, metal_driver):
     game = work / "game"
     run("cmake", "-S", project, "-B", game, "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Release",
         f"-DPS2RECOMP_BUILD={work / 'ps2recomp'}", f"-DREO_RECOMP_CONFIG_ROOT={config}",
+        "-DREO_BUILD_FILE1=OFF",
         "-DREO_BUILD_GPU_GS=ON", f"-DREO_PARALLEL_GS_SOURCE={gs}",
         f"-DREO_PARALLEL_GS_BUILD={build / 'graphics'}", "-DREO_RECOMP_PCH=ON",
         "-DREO_VULKAN_SDK_MIN=1.4.304", f"-DCMAKE_CXX_FLAGS={file2}", f"-DCMAKE_C_FLAGS={file2}",

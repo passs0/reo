@@ -1133,7 +1133,10 @@ endfunction()
 
 # ── File #1: RE Outbreak (SLUS-20765) ──────────────────────────────
 
-add_recomp_target(reo_recomp "output" "REO_GAME_FILE1")
+option(REO_BUILD_FILE1 "Configure the File #1 executable target" ON)
+if(REO_BUILD_FILE1)
+    add_recomp_target(reo_recomp "output" "REO_GAME_FILE1")
+endif()
 
 
 

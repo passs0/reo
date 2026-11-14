@@ -22,10 +22,10 @@ if python3 "$DIR/make_mac_app.py" "$@"; then
     echo ""
     echo "[✓] Process completed successfully."
 else
-    status=$?
+    build_status=$?
     echo ""
-    echo "[✗] Build failed or exited with status $status."
+    echo "[✗] Build failed or exited with status $build_status."
     echo "Press Enter to close this window..."
     read -r _
-    exit $status
+    exit $build_status
 fi
